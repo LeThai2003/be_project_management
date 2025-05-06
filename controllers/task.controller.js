@@ -19,24 +19,17 @@ export const create = async (req, res, next) => {
       projectId,
       sub_tasks,
       authorUserId: userId,
-      sub_tasks
     };
     const newTask = new Task(objectTask);
     await newTask.save();
 
-    // if(sub_tasks.length > 0)
-    // {
-    //   const record = newTask.toObject();
-    //   const taskId = record._id;
-    //   for (const task of sub_tasks) {
-    //     const randomNumber = generateRandomNumber(10);
-    //     task["sub_task_id"] = `${taskId}-${randomNumber}`;
-    //   }
+    const task = await Task.find({_id: newTask._id})
+    .populate({
+      path: "authorUserId",
+      select: "-password"
+    });
 
-    //   await Task.updateOne({_id: taskId}, {sub_tasks: sub_tasks});
-    // }
-
-    return res.status(200).json("Create a new task successfully");
+    return res.status(200).json({message: "Create a new task successfully", task: task});
   } catch (error) {
     next(error);
   }
@@ -59,11 +52,10 @@ export const getAll = async (req, res, next) => {
   }
 }
 
-// [GET] /task/update-status
+// [PATCH] /task/update-status
 export const updateStatus = async (req, res, next) => {
   const userId = new mongoose.Types.ObjectId(req.userId);
   const {toStatus, taskId} = req.body;
-  console.log(toStatus, taskId);
   try {
     const task = await Task.findOne({_id: taskId});
     if(!task.authorUserId.equals(userId) && !task.assignedUserId.equals(userId))
@@ -71,7 +63,54 @@ export const updateStatus = async (req, res, next) => {
       return next(errorHandler(400, "You couldn't change the status this task"));
     }
     await Task.updateOne({_id: taskId}, {status: toStatus});
-    return res.status(200).json({message: "Change status of task successfully"});
+
+    const taskUpdated = await Task.findOne({_id: taskId})
+    .populate({
+      path: "authorUserId",
+      select: "-password"
+    });;
+    return res.status(200).json({message: "Change status of task successfully", task: taskUpdated });
+  } catch (error) {
+    next(error);
+  }
+}
+
+// [PATCH] /task/update/:taskId
+export const updateTask = async (req, res, next) => {
+  const userId = new mongoose.Types.ObjectId(req.userId);
+  const {taskId} = req.params;
+  // console.log(taskId);
+  // console.log(req.body);
+  try {
+    const task = await Task.findOne({_id: taskId});
+    if(!task.authorUserId.equals(userId) && !task.assignedUserId.equals(userId))
+    {
+      return next(errorHandler(400, "You couldn't change the status this task"));
+    }
+    await Task.updateOne({_id: taskId}, req.body);
+    const taskUpdated = await Task.findOne({_id: taskId})
+    .populate({
+      path: "authorUserId",
+      select: "-password"
+    });
+    return res.status(200).json({message: "Update task successfully", task: taskUpdated});
+  } catch (error) {
+    next(error);
+  }
+}
+
+// [DELETE] /task/delete/:taskId
+export const deleteTask = async (req, res, next) => {
+  const {taskId} = req.params;
+  const userId = new mongoose.Types.ObjectId(req.userId);
+  try {
+    const task = await Task.findOne({_id: taskId});
+    if(!task.authorUserId.equals(userId))
+    {
+      return next(errorHandler(400, "You couldn't delete this task"));
+    }
+    await Task.deleteOne({_id: taskId});
+    return res.status(200).json({message: "Delete task successfully"});
   } catch (error) {
     next(error);
   }
