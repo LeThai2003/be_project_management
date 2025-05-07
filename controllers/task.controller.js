@@ -115,3 +115,103 @@ export const deleteTask = async (req, res, next) => {
     next(error);
   }
 }
+
+// [GET] /task/:taskId
+export const taskDetail = async (req, res, next) => {
+  const {taskId} = req.params;
+  const userId = new mongoose.Types.ObjectId(req.userId);
+  try {
+    const task = await Task.findOne({_id: taskId})
+    .populate(
+      "projectId"
+    )
+    .populate({
+      path: "authorUserId",
+      select: "-password"
+    });
+
+    // console.log(task);
+
+    if(!task.authorUserId.equals(userId) && !task.projectId.membersId.include(userId))
+    {
+      return next(errorHandler(400, "You couldn't watch this task"));
+    }
+
+    return res.status(200).json({message: "Get task detail successfully", task: task});
+
+  } catch (error) {
+    next(error);
+  }
+}
+
+// [PATCH] /task/update-completed/:taskId
+export const updateCompleted = async (req, res, next) => {
+  const {listCheck} = req.body;
+  const userId = new mongoose.Types.ObjectId(req.userId);
+  const {taskId} = req.params;
+  try {
+    const task = await Task.findOne({_id: taskId});
+    if(!task.authorUserId.equals(userId) && !task.assignedUserId.equals(userId))
+    {
+      return next(errorHandler(400, "You couldn't change sub list tasks"));
+    }
+
+    let status = task.status;
+
+    if(listCheck.length > 0 && !listCheck.includes("completed"))
+    {
+      for (const item of task.sub_tasks) {
+        if(listCheck.includes(item._id.toString())) 
+          item.isChecked = true;
+        else 
+          item.isChecked = false;
+      }
+  
+      if(listCheck.length == task.sub_tasks.length)
+      {
+        status = "Under Review";
+      }
+      else
+      {
+        status = "Work In Progress"
+      }
+  
+      await Task.updateOne({
+        _id: taskId
+      }, {
+        sub_tasks: task.sub_tasks,
+        status: status
+      });
+    }
+    else if(listCheck.length > 0 && listCheck.includes("completed"))
+    {
+      await Task.updateOne({
+        _id: taskId
+      }, {
+        status: "Under Review"
+      });
+    }
+    else  // listCheck == 0
+    {
+      status = "To Do";
+      for (const item of task.sub_tasks) {
+        item.isChecked = false;
+      }
+      await Task.updateOne({
+        _id: taskId
+      }, {
+        status: status
+      });
+    }
+
+    const taskUpdated = await Task.findOne({_id: taskId})
+    .populate({
+      path: "authorUserId",
+      select: "-password"
+    });
+
+    return res.json({message: "Update successfully", task: taskUpdated});
+  } catch (error) {
+    next(error);
+  }
+}
