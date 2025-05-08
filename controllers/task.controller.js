@@ -62,7 +62,32 @@ export const updateStatus = async (req, res, next) => {
     {
       return next(errorHandler(400, "You couldn't change the status this task"));
     }
-    await Task.updateOne({_id: taskId}, {status: toStatus});
+
+    const subTasks = task.sub_tasks;
+
+    if(subTasks.length > 0)
+    {
+      if(toStatus == "Under Review" || toStatus == "Completed")
+      {
+        for (const item of task.sub_tasks) {
+          item.isChecked = true;
+        }
+      }
+      else if(toStatus == "To Do")
+      {
+        for (const item of task.sub_tasks) {
+          item.isChecked = false;
+        }
+      }
+      else if((task.status == "Under Review" || task.status == "Completed") && (toStatus == "To Do" || toStatus == "Work In Progress"))
+      {
+        for (const item of task.sub_tasks) {
+          item.isChecked = false;
+        }
+      }
+    }
+
+    await Task.updateOne({_id: taskId}, {status: toStatus, sub_tasks: task.sub_tasks});
 
     const taskUpdated = await Task.findOne({_id: taskId})
     .populate({
@@ -87,6 +112,31 @@ export const updateTask = async (req, res, next) => {
     {
       return next(errorHandler(400, "You couldn't change the status this task"));
     }
+
+    let status = task.status;
+    const subTasks = req.body.sub_tasks;
+    if(subTasks.length > 0)
+    {
+      if(req.body.status == "Under Review" || req.body.status == "Completed")
+      {
+        for (const item of req.body.sub_tasks) {
+          item.isChecked = true;
+        }
+      }
+      else if(req.body.status == "To Do")
+      {
+        for (const item of req.body.sub_tasks) {
+          item.isChecked = false;
+        }
+      }
+      else if((task.status == "Under Review" || task.status == "Completed") && (req.body.status == "To Do" || req.body.status == "Work In Progress"))
+      {
+        for (const item of req.body.sub_tasks) {
+          item.isChecked = false;
+        }
+      }
+    }
+
     await Task.updateOne({_id: taskId}, req.body);
     const taskUpdated = await Task.findOne({_id: taskId})
     .populate({

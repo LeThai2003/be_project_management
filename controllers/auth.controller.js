@@ -1,6 +1,6 @@
 import ForgotPassword from "../models/forgot-password.model.js";
 import User from "../models/user.model.js";
-import { generateRandomNumber } from "../utils/generate.js";
+import { generateRandomNumber, generateRandomString } from "../utils/generate.js";
 import { errorHandler } from "../utils/handleError.js";
 import bcryptjs from "bcryptjs";
 import jwt from "jsonwebtoken";
@@ -144,6 +144,45 @@ export const passwordReset = async (req, res, next) => {
     return res.status(200).json({message: "Reset password successfully"});
 
   } catch (error){
+    next(error);
+  }
+}
+
+export const google = async (req, res, next) => {
+  const {email, fullname, photo} = req.body;
+  try {
+    const userExist = await User.findOne({email: email});
+    if(userExist)
+    {
+      const token = jwt.sign({id: userExist._id}, process.env.SECRET_ACCESS_TOKEN, {expiresIn: "1h"});
+
+      const user = userExist.toObject();
+      delete user.password;
+  
+      return res.status(200).json({message: "Login successful", user, accessToken: token});
+    }
+    else
+    {
+      const randomNumber = generateRandomString(15);
+      const hashedPassword = bcryptjs.hashSync(randomNumber, 10);
+    
+      const newUser = new User({
+        fullname,
+        email,
+        profilePicture: photo,
+        password: hashedPassword
+      });
+
+      await newUser.save();
+
+      const user = newUser.toObject();
+      delete user.password;
+
+      const token = jwt.sign({id: user._id}, process.env.SECRET_ACCESS_TOKEN, {expiresIn: "1h"});
+  
+      return res.status(200).json({message: "Sign up successful", user, accessToken: token});
+    }
+  } catch (error) {
     next(error);
   }
 }

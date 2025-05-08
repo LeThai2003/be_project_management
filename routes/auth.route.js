@@ -1,11 +1,13 @@
 import express from "express";
-import { login, passwordForgot, passwordOtp, passwordReset, signUp } from "../controllers/auth.controller.js";
+import { google, login, passwordForgot, passwordOtp, passwordReset, signUp } from "../controllers/auth.controller.js";
 
 const route = express.Router();
 
 route.post("/sign-up", signUp);
 
 route.post("/login", login);
+
+route.post("/google", google);
 
 route.post("/password-forgot", passwordForgot);
 
