@@ -5,6 +5,7 @@ import {connectDB} from "./configs/database.js";
 import authRoutes from "./routes/auth.route.js";
 import projectRoute from "./routes/project.route.js";
 import taskRoute from "./routes/task.route.js";
+import uploadRoute from "./routes/upload.route.js"
 
 dotenv.config();
 
@@ -20,6 +21,7 @@ app.use(cors())
 app.use("/auth", authRoutes);
 app.use("/project", projectRoute);
 app.use("/task", taskRoute);
+app.use("/upload", uploadRoute);
 
 // resolve err
 app.use((err, req, res, next) => {

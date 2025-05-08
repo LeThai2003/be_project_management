@@ -9,7 +9,7 @@ import { sendMail } from "../utils/sendMail.js";
 
 // [POST] /auth/sign-up
 export const signUp = async (req, res, next) => {
-  const {fullname, email, password, profilePicture} = req.body;
+  const {fullname, email, password, profileImageUrl} = req.body;
   try {
 
     const emailExist = await User.findOne({email: email});
@@ -22,7 +22,7 @@ export const signUp = async (req, res, next) => {
       fullname,
       email,
       password: hashPassword,
-      profilePicture
+      profilePicture: profileImageUrl
     });
 
     await newUser.save();
