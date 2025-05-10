@@ -10,11 +10,11 @@ export const create = async (req, res, next) => {
     const objectTask = {
       title,
       description,
-      status,
-      priority,
+      status: status || 'To Do',
+      priority: priority || 'Backlog',
       tags,
-      startDate,
-      dueDate,
+      startDate: startDate || new Date(),
+      dueDate: dueDate || new Date(),
       imageTask,
       projectId,
       sub_tasks,
@@ -23,7 +23,7 @@ export const create = async (req, res, next) => {
     const newTask = new Task(objectTask);
     await newTask.save();
 
-    const task = await Task.find({_id: newTask._id})
+    const task = await Task.findOne({_id: newTask._id})
     .populate({
       path: "authorUserId",
       select: "-password"
