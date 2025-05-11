@@ -60,7 +60,7 @@ export const updateStatus = async (req, res, next) => {
     const task = await Task.findOne({_id: taskId});
     if(!task.authorUserId.equals(userId) && !task.assignedUserId.equals(userId))
     {
-      return next(errorHandler(400, "You couldn't change the status this task"));
+      return next(errorHandler(401, "You couldn't change the status this task"));
     }
 
     const subTasks = task.sub_tasks;
@@ -110,7 +110,7 @@ export const updateTask = async (req, res, next) => {
     const task = await Task.findOne({_id: taskId});
     if(!task.authorUserId.equals(userId) && !task.assignedUserId.equals(userId))
     {
-      return next(errorHandler(400, "You couldn't change the status this task"));
+      return next(errorHandler(401, "You couldn't change the status this task"));
     }
 
     let status = task.status;

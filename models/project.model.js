@@ -14,6 +14,12 @@ const projectShema = new mongoose.Schema({
   membersId: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
+  }],
+  invitations: [{
+    email: {type: String, required: true},
+    invitedAt: {type: Date, default: Date.now},
+    token: {type: String, required: true},
+    expireAt: { type: Date, default: Date.now, expires: 10 * 60}
   }]
 });
 
