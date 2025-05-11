@@ -182,12 +182,19 @@ export const taskDetail = async (req, res, next) => {
 
     // console.log(task);
 
-    if(!task.authorUserId.equals(userId) && !task.projectId.membersId.include(userId))
+    let isJustView = false;
+
+    if(!task.authorUserId.equals(userId) && !task.projectId.membersId.some(id => id.equals(userId)))
     {
       return next(errorHandler(400, "You couldn't watch this task"));
     }
 
-    return res.status(200).json({message: "Get task detail successfully", task: task});
+    if(!task.authorUserId.equals(userId) && !task.assignedUserId?.equals(userId))
+    {
+      isJustView = true;
+    }
+
+    return res.status(200).json({message: "Get task detail successfully", task: {...task._doc, isJustView}});
 
   } catch (error) {
     next(error);
@@ -201,7 +208,7 @@ export const updateCompleted = async (req, res, next) => {
   const {taskId} = req.params;
   try {
     const task = await Task.findOne({_id: taskId});
-    if(!task.authorUserId.equals(userId) && !task.assignedUserId.equals(userId))
+    if(!task.authorUserId.equals(userId) && !task.assignedUserId?.equals(userId))
     {
       return next(errorHandler(400, "You couldn't change sub list tasks"));
     }

@@ -6,8 +6,8 @@ const route = express.Router();
 
 route.use(authenticateToken);
 
-route.get("/all-members/:projectId", searchMembersInProject);
+route.post("/all-members/:projectId", searchMembersInProject);
 
-route.get("/add-member/:projectId", searchAddMemberToProject);
+route.post("/add-member/:projectId", searchAddMemberToProject);
 
 export default route;

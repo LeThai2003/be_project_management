@@ -7,7 +7,7 @@ import User from "../models/user.model.js";
 export const searchMembersInProject = async (req, res, next) => {
   const {projectId} = req.params;
   const userId = new mongoose.Types.ObjectId(req.userId);
-  const {search} = req.body;
+  const {search, tasks} = req.body;
   try {
     const project = await Project.findOne({_id: projectId})
     .populate({
@@ -33,10 +33,22 @@ export const searchMembersInProject = async (req, res, next) => {
 
     if(project.authorUserId.slugName.includes(slugSearch) || project.authorUserId.email.includes(search))
     {
-      result.push(project.authorUserId);
+      result.push({...project.authorUserId._doc, creator: true, totalCreate: 0, totalAssign: 0});
     }
 
-    project.membersId?.filter(member => (member.slugName.includes(slugSearch) || member.email.includes(search)))?.forEach(member => result.push(member));
+    project.membersId?.filter(member => (member.slugName.includes(slugSearch) || member.email.includes(search)))?.forEach(member => result.push({...member._doc, totalCreate: 0, totalAssign: 0}));
+
+
+    if(tasks.length > 0)
+    {
+      for (const task of tasks) {
+        const member = result.find(m => m._id == task.authorUserId._id);
+        if(member)
+        {
+          member.totalCreate += 1;
+        }
+      }
+    }
 
     return res.status(200).json({message: "Get all members of project successfully", members: result});
 
@@ -50,7 +62,7 @@ export const searchMembersInProject = async (req, res, next) => {
 export const searchAddMemberToProject = async (req, res, next) => {
   const {projectId} = req.params;
   const userId = new mongoose.Types.ObjectId(req.userId);
-  console.log(req.body);
+  // console.log(req.body);
   const {search} = req.body;
   try {
 
@@ -93,7 +105,7 @@ export const searchAddMemberToProject = async (req, res, next) => {
       {
         user.status = "Creator";
       } 
-      else if (project.membersId.includes(user._id.toString())) 
+      else if (project.membersId.some(member => member._id.equals(user._id))) 
       {
         user.status = "Member";
       } 
