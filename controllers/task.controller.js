@@ -5,10 +5,12 @@ import mongoose from "mongoose";
 
 export const create = async (req, res, next) => {
   const userId = req.userId;
-  const {title, description, status, priority, tags, startDate, dueDate, imageTask, projectId, sub_tasks, assigneeUserId} = req.body;
+  let {title, description, status, priority, tags, startDate, dueDate, imageTask, projectId, sub_tasks, assigneeUserId} = req.body;
   try {
 
     console.log(assigneeUserId);
+
+    if(assigneeUserId == "") assigneeUserId = null
 
     const objectTask = {
       title,

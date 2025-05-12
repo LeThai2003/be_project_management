@@ -1,8 +1,11 @@
 import mongoose, { Schema } from "mongoose";
+import slug from "mongoose-slug-updater";
 
+mongoose.plugin(slug);
 
 const projectShema = new mongoose.Schema({
   name: {type: String, required: true},
+  slugName: {type: String, slug: "name"},
   description: {type: String},
   startDate: {type: Date},
   endDate: {type: Date},

@@ -1,4 +1,7 @@
 import mongoose, { mongo, Schema } from "mongoose";
+import slug from "mongoose-slug-updater";
+
+mongoose.plugin(slug);
 
 const subTaskSchema = new mongoose.Schema({
   // sub_task_id: {type: String},
@@ -8,6 +11,7 @@ const subTaskSchema = new mongoose.Schema({
 
 const taskSchema = new mongoose.Schema({
   title: {type: String, required: true},
+  slugTitle: {type: String, slug: "title"},
   description: {type: String},
   status: {
     type: String,

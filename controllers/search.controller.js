@@ -2,8 +2,9 @@ import mongoose from "mongoose";
 import Project from "../models/project.model.js";
 import { convertToSlug } from "../helpers/convertToSlug.js";
 import User from "../models/user.model.js";
+import Task from "../models/task.model.js";
 
-// [GET] /search/all-members/:projectId
+// [POST] /search/all-members/:projectId
 export const searchMembersInProject = async (req, res, next) => {
   const {projectId} = req.params;
   const userId = new mongoose.Types.ObjectId(req.userId);
@@ -58,7 +59,7 @@ export const searchMembersInProject = async (req, res, next) => {
 }
 
 
-// [GET] /search/add-member/:projectId
+// [POST] /search/add-member/:projectId
 export const searchAddMemberToProject = async (req, res, next) => {
   const {projectId} = req.params;
   const userId = new mongoose.Types.ObjectId(req.userId);
@@ -128,3 +129,83 @@ export const searchAddMemberToProject = async (req, res, next) => {
   }
 }
 
+// [POST] /search/anything
+export const searchAnything = async (req, res, next) => {
+  const userId = req.userId;
+  const {search} = req.body;
+  try {
+    const slugSearch = convertToSlug(search);
+
+    const projects = await Project.find({
+      $and: [
+        { 
+          $or: [
+            { authorUserId: userId },
+            { membersId: userId }
+          ]
+        },
+        {
+          $or: [
+            { slugName: {$regex: slugSearch}},
+            { description: {$regex: search, $options: "i"}}
+          ]
+        }
+      ]
+      
+    })
+    .populate({
+      path: "authorUserId",
+      select: "-password"
+    })
+    .populate({
+      path: "membersId",
+      select: "-password"
+    });
+
+    const tasks = await Task.find({
+      $and: [
+        { 
+          $or: [
+            { authorUserId: userId },
+            { assigneeUserId: userId }
+          ]
+        },
+        {
+          $or: [
+            { slugTitle: {$regex: slugSearch}},
+            { description: {$regex: search, $options: "i"}},
+            { tags: {$regex: search, $options: "i"}}
+          ]
+        }
+      ]
+      
+    })
+    .populate({
+      path: "authorUserId",
+      select: "-password"
+    })
+    .populate({
+      path: "assigneeUserId",
+      select: "-password"
+    });
+
+    let users = [];
+
+    if(!"@gmail.com".includes(search))
+    {
+      users = await User.find({
+        $or: [
+          { slugName: {$regex: slugSearch}},
+          { email: {$regex: search, $options: "i"}}
+        ]
+      })
+      .select("-password");
+    }
+    
+
+    return res.status(200).json({message: "Search successfully", projects, tasks, users});
+
+  } catch (error) {
+    next(error);
+  }
+}
