@@ -31,7 +31,7 @@ const taskSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
   },
-  assignedUserId: {
+  assigneeUserId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
   },

@@ -5,8 +5,11 @@ import mongoose from "mongoose";
 
 export const create = async (req, res, next) => {
   const userId = req.userId;
-  const {title, description, status, priority, tags, startDate, dueDate, imageTask, projectId, sub_tasks} = req.body;
+  const {title, description, status, priority, tags, startDate, dueDate, imageTask, projectId, sub_tasks, assigneeUserId} = req.body;
   try {
+
+    console.log(assigneeUserId);
+
     const objectTask = {
       title,
       description,
@@ -19,6 +22,7 @@ export const create = async (req, res, next) => {
       projectId,
       sub_tasks,
       authorUserId: userId,
+      assigneeUserId
     };
     const newTask = new Task(objectTask);
     await newTask.save();
@@ -26,6 +30,10 @@ export const create = async (req, res, next) => {
     const task = await Task.findOne({_id: newTask._id})
     .populate({
       path: "authorUserId",
+      select: "-password"
+    })
+    .populate({
+      path: "assigneeUserId",
       select: "-password"
     });
 
@@ -43,6 +51,10 @@ export const getAll = async (req, res, next) => {
     .populate({
       path: "authorUserId",
       select: "-password"
+    })
+    .populate({
+      path: "assigneeUserId",
+      select: "-password"
     });
 
     res.status(200).json({message: "Get tasks successfully", tasks: tasks});
@@ -58,7 +70,7 @@ export const updateStatus = async (req, res, next) => {
   const {toStatus, taskId} = req.body;
   try {
     const task = await Task.findOne({_id: taskId});
-    if(!task.authorUserId.equals(userId) && !task.assignedUserId.equals(userId))
+    if(!task.authorUserId.equals(userId) && !task.assigneeUserId.equals(userId))
     {
       return next(errorHandler(401, "You couldn't change the status this task"));
     }
@@ -93,7 +105,11 @@ export const updateStatus = async (req, res, next) => {
     .populate({
       path: "authorUserId",
       select: "-password"
-    });;
+    })
+    .populate({
+      path: "assigneeUserId",
+      select: "-password"
+    });
     return res.status(200).json({message: "Change status of task successfully", task: taskUpdated });
   } catch (error) {
     next(error);
@@ -108,11 +124,13 @@ export const updateTask = async (req, res, next) => {
   // console.log(req.body);
   try {
     const task = await Task.findOne({_id: taskId});
-    if(!task.authorUserId.equals(userId) && !task.assignedUserId.equals(userId))
+    if(!task.authorUserId.equals(userId) && !task.assigneeUserId.equals(userId))
     {
       return next(errorHandler(401, "You couldn't change the status this task"));
     }
 
+    if(req.body.assigneeUserId == "") req.body.assigneeUserId = null
+    
     let status = task.status;
     const subTasks = req.body.sub_tasks;
     if(subTasks.length > 0)
@@ -141,6 +159,10 @@ export const updateTask = async (req, res, next) => {
     const taskUpdated = await Task.findOne({_id: taskId})
     .populate({
       path: "authorUserId",
+      select: "-password"
+    })
+    .populate({
+      path: "assigneeUserId",
       select: "-password"
     });
     return res.status(200).json({message: "Update task successfully", task: taskUpdated});
@@ -178,6 +200,10 @@ export const taskDetail = async (req, res, next) => {
     .populate({
       path: "authorUserId",
       select: "-password"
+    })
+    .populate({
+      path: "assigneeUserId",
+      select: "-password"
     });
 
     // console.log(task);
@@ -189,7 +215,7 @@ export const taskDetail = async (req, res, next) => {
       return next(errorHandler(400, "You couldn't watch this task"));
     }
 
-    if(!task.authorUserId.equals(userId) && !task.assignedUserId?.equals(userId))
+    if(!task.authorUserId.equals(userId) && !task.assigneeUserId?.equals(userId))
     {
       isJustView = true;
     }
@@ -208,7 +234,7 @@ export const updateCompleted = async (req, res, next) => {
   const {taskId} = req.params;
   try {
     const task = await Task.findOne({_id: taskId});
-    if(!task.authorUserId.equals(userId) && !task.assignedUserId?.equals(userId))
+    if(!task.authorUserId.equals(userId) && !task.assigneeUserId?.equals(userId))
     {
       return next(errorHandler(400, "You couldn't change sub list tasks"));
     }
@@ -264,6 +290,10 @@ export const updateCompleted = async (req, res, next) => {
     const taskUpdated = await Task.findOne({_id: taskId})
     .populate({
       path: "authorUserId",
+      select: "-password"
+    })
+    .populate({
+      path: "assigneeUserId",
       select: "-password"
     });
 
