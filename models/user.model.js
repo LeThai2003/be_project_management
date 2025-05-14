@@ -7,6 +7,7 @@ import slug from 'mongoose-slug-generator';
 const userSchema = new mongoose.Schema({
   fullname: {type: String, required: true},
   // slugName: {type: String, slug: "fullname"},
+  slugName: {type: String},
   email: {type: String, required: true, unique: true},
   password: {type: String, required: true},
   profilePicture: {

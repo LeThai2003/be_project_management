@@ -5,6 +5,7 @@ import { errorHandler } from "../utils/handleError.js";
 import bcryptjs from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { sendMail } from "../utils/sendMail.js";
+import { convertToSlug } from "../helpers/convertToSlug.js";
 
 
 // [POST] /auth/sign-up
@@ -20,6 +21,7 @@ export const signUp = async (req, res, next) => {
     const hashPassword = bcryptjs.hashSync(password, 10);
     const newUser = new User({
       fullname,
+      slugName: convertToSlug(fullname),
       email,
       password: hashPassword,
       profilePicture: profileImageUrl
@@ -168,6 +170,7 @@ export const google = async (req, res, next) => {
     
       const newUser = new User({
         fullname,
+        slugName: convertToSlug(fullname),
         email,
         profilePicture: photo,
         password: hashedPassword

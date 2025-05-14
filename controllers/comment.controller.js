@@ -12,7 +12,7 @@ export const create = async (req, res, next) => {
     const task = await Task.findOne({_id: taskId});
     if(!task) return next(errorHandler(400, "Task is not exist"));
     const project = await Project.findOne({_id: task.projectId});
-    if(!project.authorUserId.equals(userId) && !project.membersId.some(id => id == userId))
+    if(!project.authorUserId.equals(userId) && !project.membersId.some(id => id.equals(userId)))
     {
       return next(errorHandler(400, "You can't comment in this task"));
     }
@@ -50,7 +50,7 @@ export const getAll = async (req, res, next) => {
     const task = await Task.findOne({_id: taskId});
     if(!task) return next(errorHandler(400, "Task is not exist"));
     const project = await Project.findOne({_id: task.projectId});
-    if(!project.authorUserId.equals(userId) && !project.membersId.some(id => id == userId))
+    if(!project.authorUserId.equals(userId) && !project.membersId.some(id => id.equals(userId)))
     {
       return next(errorHandler(400, "You can't watch comments in this task"));
     }
@@ -120,6 +120,45 @@ export const deleteComment = async (req, res, next) => {
     });
 
     return res.status(200).json({message: "Deleted successfully"});
+
+  } catch (error) {
+    next(error);
+  }
+}
+
+// [PATCH] /comment/like/:id
+export const updateLike = async (req, res, next) => {
+  const {id} = req.params;
+  const userId = new mongoose.Types.ObjectId(req.userId);
+  try {
+    const comment = await Comment.findOne({_id: id}).populate("taskId");
+
+    if(!comment) return next(errorHandler(400, "Comment is not exist"));
+    
+    const project = await Project.findOne({_id: comment.taskId.projectId});
+    if(!project.authorUserId.equals(userId) && !project.membersId?.some(id => id.equals(userId)))
+    {
+      return next(errorHandler(400, "You are not a member"));
+    }
+
+    // console.log(comment.like);
+
+    if(comment.like?.some(id => id.equals(userId)))
+    {
+      await Comment.updateOne({_id: id}, {$pull: {like: userId}});
+    }
+    else
+    {
+      await Comment.updateOne({_id: id}, {$push: {like: userId}});
+    }
+
+    const commentUpdate = await Comment.findOne({_id: id})
+    .populate({
+      path: "userId",
+      select: "-password"
+    })
+
+    return res.status(200).json({message: "Updated like successfully", comment: commentUpdate});
 
   } catch (error) {
     next(error);

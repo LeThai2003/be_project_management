@@ -13,6 +13,7 @@ const subTaskSchema = new mongoose.Schema({
 const taskSchema = new mongoose.Schema({
   title: {type: String, required: true},
   // slugTitle: {type: String, slug: "title"},
+  slugTitle: {type: String},
   description: {type: String},
   status: {
     type: String,

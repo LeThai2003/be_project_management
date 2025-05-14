@@ -5,6 +5,7 @@ import jwt from "jsonwebtoken";
 import User from "../models/user.model.js";
 import { sendMail } from "../utils/sendMail.js";
 import moment from "moment";
+import { convertToSlug } from "../helpers/convertToSlug.js";
 
 
 // [POST] /project/create
@@ -14,6 +15,7 @@ export const create = async (req, res, next) => {
   try {
     const newProject = new Project({
       name: projectName,
+      slugName: convertToSlug(projectName),
       description,
       startDate,
       endDate,

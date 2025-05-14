@@ -7,6 +7,7 @@ import slug from 'mongoose-slug-generator';
 const projectShema = new mongoose.Schema({
   name: {type: String, required: true},
   // slugName: {type: String, slug: "name"},
+  slugName: {type: String},
   description: {type: String},
   startDate: {type: Date},
   endDate: {type: Date},

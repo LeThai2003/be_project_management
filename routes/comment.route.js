@@ -1,6 +1,6 @@
 import express from "express";
 import { authenticateToken } from "../middlewares/authenticate.middleware.js";
-import { create, deleteComment, getAll, updateComment } from "../controllers/comment.controller.js";
+import { create, deleteComment, getAll, updateComment, updateLike } from "../controllers/comment.controller.js";
 
 const route = express.Router();
 
@@ -13,6 +13,8 @@ route.get("/:taskId", getAll);
 route.patch("/:id", updateComment);
 
 route.delete("/:id", deleteComment);
+
+route.patch("/like/:id", updateLike);
 
 
 export default route;

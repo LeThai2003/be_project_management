@@ -1,3 +1,4 @@
+import { convertToSlug } from "../helpers/convertToSlug.js";
 import Project from "../models/project.model.js";
 import Task from "../models/task.model.js";
 import { generateRandomNumber } from "../utils/generate.js";
@@ -15,6 +16,7 @@ export const create = async (req, res, next) => {
 
     const objectTask = {
       title,
+      slugTitle: convertToSlug(title),
       description,
       status: status || 'To Do',
       priority: priority || 'Backlog',
@@ -62,7 +64,7 @@ export const getAll = async (req, res, next) => {
     });
 
     const project = await Project.findOne({_id: projectId});
-    if(!project.authorUserId.equals(userId) && !project.membersId?.some(id => id == userId))
+    if(!project.authorUserId.equals(userId) && !project.membersId?.some(id => id.equals(userId)))
     {
       return next(errorHandler(400, "You can't watch tasks of this project"));
     }
