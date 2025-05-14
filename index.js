@@ -8,6 +8,7 @@ import taskRoute from "./routes/task.route.js";
 import uploadRoute from "./routes/upload.route.js";
 import searchRoute from "./routes/search.route.js";
 import userRoute from "./routes/user.route.js";
+import commentRoute from "./routes/comment.route.js";
 
 dotenv.config();
 
@@ -26,6 +27,7 @@ app.use("/task", taskRoute);
 app.use("/upload", uploadRoute);
 app.use("/search", searchRoute);
 app.use("/user", userRoute);
+app.use("/comment", commentRoute);
 
 // resolve err
 app.use((err, req, res, next) => {

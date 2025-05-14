@@ -1,3 +1,4 @@
+import Project from "../models/project.model.js";
 import Task from "../models/task.model.js";
 import { generateRandomNumber } from "../utils/generate.js";
 import { errorHandler } from "../utils/handleError.js";
@@ -48,6 +49,7 @@ export const create = async (req, res, next) => {
 // [GET] /task/get-all
 export const getAll = async (req, res, next) => {
   const projectId = req.query.projectId;
+  const userId = new mongoose.Types.ObjectId(req.userId);
   try {
     const tasks = await Task.find({projectId: projectId})
     .populate({
@@ -58,6 +60,12 @@ export const getAll = async (req, res, next) => {
       path: "assigneeUserId",
       select: "-password"
     });
+
+    const project = await Project.findOne({_id: projectId});
+    if(!project.authorUserId.equals(userId) && !project.membersId?.some(id => id == userId))
+    {
+      return next(errorHandler(400, "You can't watch tasks of this project"));
+    }
 
     res.status(200).json({message: "Get tasks successfully", tasks: tasks});
 
@@ -74,7 +82,7 @@ export const updateStatus = async (req, res, next) => {
     const task = await Task.findOne({_id: taskId});
     if(!task.authorUserId.equals(userId) && !task.assigneeUserId.equals(userId))
     {
-      return next(errorHandler(401, "You couldn't change the status this task"));
+      return next(errorHandler(400, "You couldn't change the status this task"));
     }
 
     const subTasks = task.sub_tasks;
@@ -212,7 +220,7 @@ export const taskDetail = async (req, res, next) => {
 
     let isJustView = false;
 
-    if(!task.authorUserId.equals(userId) && !task.projectId.membersId.some(id => id.equals(userId)))
+    if(!task.projectId.authorUserId.equals(userId) && !task.projectId.membersId?.some(id => id.equals(userId)))
     {
       return next(errorHandler(400, "You couldn't watch this task"));
     }

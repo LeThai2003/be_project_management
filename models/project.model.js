@@ -1,11 +1,12 @@
-import mongoose, { Schema } from "mongoose";
-import slug from "mongoose-slug-updater";
+import mongoose from "mongoose";
+import slug from 'mongoose-slug-generator';
+// import slug from "mongoose-slug-updater";
 
-mongoose.plugin(slug);
+// mongoose.plugin(slug);
 
 const projectShema = new mongoose.Schema({
   name: {type: String, required: true},
-  slugName: {type: String, slug: "name"},
+  // slugName: {type: String, slug: "name"},
   description: {type: String},
   startDate: {type: Date},
   endDate: {type: Date},
