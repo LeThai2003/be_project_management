@@ -217,8 +217,8 @@ export const google = async (req, res, next) => {
 
 // [POST] /auth/refresh-token
 export const refreshToken = async (req, res, next) => {
-  console.log("refresh token");
-  console.log(req.cookies);
+  // console.log("refresh token");
+  // console.log(req.cookies);
   const refreshToken = req.cookies.refreshToken;
   if(!refreshToken)
   {
@@ -253,6 +253,25 @@ export const refreshToken = async (req, res, next) => {
 
       return res.status(200).json({message: "Refresh Token Successfully", accessToken: newAccessToken});
     })
+
+  } catch (error) {
+    next(error);
+  }
+}
+
+// [POST] /auth/logout
+export const logout = async (req, res) => {
+  const userId = req.userId;
+  // console.log(userId);
+  const {refreshToken} = req.cookies;
+  // console.log(refreshToken);
+  try {
+    const user = await User.findOne({_id: userId});
+    if(user.refreshToken != refreshToken) return next(errorHandler(401, "Refresh token is not valid"));
+
+    res.clearCookie("refreshToken");
+
+    return res.status(200).json("Logut successfully");
 
   } catch (error) {
     next(error);

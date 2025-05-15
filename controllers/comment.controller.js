@@ -17,7 +17,7 @@ export const create = async (req, res, next) => {
       return next(errorHandler(400, "You can't comment in this task"));
     }
 
-    if(!req.body?.message && !req.body?.image && !req.body?.file)
+    if(!req.body?.message && !req.body?.imagesUrl?.length > 0 && !req.body?.file)
     {
       return next(errorHandler(400, "Please enter content"));
     }
@@ -80,7 +80,7 @@ export const updateComment = async (req, res, next) => {
       return next(errorHandler(400, "You can't change this comment"));
     }
 
-    if(!req.body?.message && !req.body?.image && !req.body?.file)
+    if(!req.body?.message && !req.body?.imagesUrl?.length > 0 && !req.body?.file)
     {
       return next(errorHandler(400, "Please enter content"));
     }

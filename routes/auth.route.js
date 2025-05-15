@@ -1,11 +1,14 @@
 import express from "express";
-import { google, login, passwordForgot, passwordOtp, passwordReset, refreshToken, signUp } from "../controllers/auth.controller.js";
+import { google, login, logout, passwordForgot, passwordOtp, passwordReset, refreshToken, signUp } from "../controllers/auth.controller.js";
+import { authenticateToken } from "../middlewares/authenticate.middleware.js";
 
 const route = express.Router();
 
 route.post("/sign-up", signUp);
 
 route.post("/login", login);
+
+route.post("/logout", authenticateToken, logout);
 
 route.post("/google", google);
 
