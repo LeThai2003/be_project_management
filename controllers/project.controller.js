@@ -27,11 +27,11 @@ export const create = async (req, res, next) => {
     const record = await Project.findOne({_id: newProject._id})
     .populate({
       path: "authorUserId",
-      select: "-password"
+      select: "-password -refreshToken"
     })
     .populate({
       path: "membersId",
-      select: "-password"
+      select: "-password -refreshToken"
     });
 
     res.status(200).json({message: "Create a new project successfully", project: record});
@@ -61,11 +61,11 @@ export const updateProject = async (req, res, next) => {
     const record = await Project.findOne({_id: projectId})
     .populate({
       path: "authorUserId",
-      select: "-password"
+      select: "-password -refreshToken"
     })
     .populate({
       path: "membersId",
-      select: "-password"
+      select: "-password -refreshToken"
     });
 
     
@@ -88,11 +88,11 @@ export const getAll = async (req, res, next) => {
     })
     .populate({
       path: "authorUserId",
-      select: "-password"
+      select: "-password -refreshToken"
     })
     .populate({
       path: "membersId",
-      select: "-password"
+      select: "-password -refreshToken"
     });
 
     res.status(200).json({message: "Get list projects successfully", projects: projects});
@@ -110,11 +110,11 @@ export const getDetail = async (req, res, next) => {
     const project = await Project.findOne({_id: id})
     .populate({
       path: "authorUserId",
-      select: "-password"
+      select: "-password -refreshToken"
     })
     .populate({
       path: "membersId",
-      select: "-password"
+      select: "-password -refreshToken"
     });
     if(!project.authorUserId._id.equals(userId) && !project.membersId.some(m => m._id == userId))
     {
@@ -136,7 +136,7 @@ export const addMemberToProject = async (req, res, next) => {
       return res.status(400).json({ message: "Invalid memberId format" });
     }
 
-    const member = await User.findOne({_id: memberId}).select("-password");
+    const member = await User.findOne({_id: memberId}).select("-password -refreshToken");
 
     if(!member)
     {
@@ -150,7 +150,7 @@ export const addMemberToProject = async (req, res, next) => {
       return next(errorHandler(400, "You couldn't add member to project"))
     }
 
-    const user = await User.findOne({_id: userId.toString()}).select("-password");
+    const user = await User.findOne({_id: userId.toString()}).select("-password -refreshToken");
 
     if(project.authorUserId.equals(member._id) || project.membersId.some(id => id.equals(member._id)) || project.invitations.some(inv => inv.email == member.email))
     {

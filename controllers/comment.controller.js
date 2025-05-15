@@ -32,7 +32,7 @@ export const create = async (req, res, next) => {
     const record = await Comment.findOne({_id: comment._doc._id})
     .populate({
       path: "userId",
-      select: "-password"
+      select: "-password -refreshToken"
     })
 
     return res.status(200).json({message: "Commented successfully", comment: record});
@@ -58,7 +58,7 @@ export const getAll = async (req, res, next) => {
     const comments = await Comment.find({taskId: taskId})
     .populate({
       path: "userId",
-      select: "-password"
+      select: "-password -refreshToken"
     });
 
     return res.status(200).json({message: "Get comments successfully", comments: comments});
@@ -90,7 +90,7 @@ export const updateComment = async (req, res, next) => {
     const commentUpdate = await Comment.findOne({_id: id})
     .populate({
       path: "userId",
-      select: "-password"
+      select: "-password -refreshToken"
     });
 
     return res.status(200).json({message: "Updated successfully", comment: commentUpdate});
@@ -155,7 +155,7 @@ export const updateLike = async (req, res, next) => {
     const commentUpdate = await Comment.findOne({_id: id})
     .populate({
       path: "userId",
-      select: "-password"
+      select: "-password -refreshToken"
     })
 
     return res.status(200).json({message: "Updated like successfully", comment: commentUpdate});

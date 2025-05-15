@@ -10,7 +10,7 @@ export const updateProfile = async (req, res, next) => {
   try {
     if(id !== userId) return next(errorHandler(401, "You are not allowed to change profile information"));
 
-    const user = await User.findOne({_id: userId}).select("-password");
+    const user = await User.findOne({_id: userId}).select("-password -refreshToken");
 
     if(user.email !== req.body.email)
     {
@@ -20,7 +20,7 @@ export const updateProfile = async (req, res, next) => {
 
     await User.updateOne({_id: id}, req.body);
 
-    const userUpdate = await User.findOne({_id: id}).select("-password");
+    const userUpdate = await User.findOne({_id: id}).select("-password -refreshToken");
 
     return res.status(200).json({message: "Update profile successfully", user: userUpdate});
   } catch (error) {

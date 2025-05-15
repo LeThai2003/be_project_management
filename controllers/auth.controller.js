@@ -55,9 +55,21 @@ export const login = async (req, res, next) => {
     }
 
     const token = jwt.sign({id: userExist._id}, process.env.SECRET_ACCESS_TOKEN, {expiresIn: "1h"});
+    const refreshToken = jwt.sign({id: userExist._id}, process.env.SECRET_REFRESH_TOKEN, {expiresIn: "365d"});
+
+    await User.updateOne({email: email}, {refreshToken: refreshToken});
 
     const user = userExist.toObject();
     delete user.password;
+    delete user.refreshToken;
+
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true, // Ngăn JavaScript trên trình duyệt truy cập cookie — tăng bảo mật.
+      path: "/",  // Đường dẫn mà cookie được gửi. "/" là toàn bộ ứng dụng.
+      // secure: false, // Cookie chỉ được gửi qua HTTPS nếu là true. Khi dev trên localhost, nên để false.
+      // sameSite: "none"  // Chống tấn công CSRF. Cookie chỉ được gửi nếu request đến từ cùng site. --> lax
+      maxAge: 365 * 24 * 60 * 60 * 1000
+    })
 
     return res.status(200).json({message: "Login successful", user, accessToken: token});
 
@@ -157,9 +169,21 @@ export const google = async (req, res, next) => {
     if(userExist)
     {
       const token = jwt.sign({id: userExist._id}, process.env.SECRET_ACCESS_TOKEN, {expiresIn: "1h"});
+      const refreshToken = jwt.sign({id: userExist._id}, process.env.SECRET_REFRESH_TOKEN, {expiresIn: "365d"});
+
+      await User.updateOne({email: email}, {refreshToken: refreshToken});
 
       const user = userExist.toObject();
       delete user.password;
+      delete user.refreshToken;
+
+      res.cookie("refreshToken", refreshToken, {
+        httpOnly: true, // Ngăn JavaScript trên trình duyệt truy cập cookie — tăng bảo mật.
+        path: "/",  // Đường dẫn mà cookie được gửi. "/" là toàn bộ ứng dụng.
+        // secure: false, // Cookie chỉ được gửi qua HTTPS nếu là true. Khi dev trên localhost, nên để false.
+        // sameSite: "none"  // Chống tấn công CSRF. Cookie chỉ được gửi nếu request đến từ cùng site. --> lax
+        maxAge: 365 * 24 * 60 * 60 * 1000
+      })
   
       return res.status(200).json({message: "Login successful", user, accessToken: token});
     }
@@ -173,7 +197,7 @@ export const google = async (req, res, next) => {
         slugName: convertToSlug(fullname),
         email,
         profilePicture: photo,
-        password: hashedPassword
+        password: hashedPassword,
       });
 
       await newUser.save();
@@ -185,6 +209,51 @@ export const google = async (req, res, next) => {
   
       return res.status(200).json({message: "Sign up successful", user, accessToken: token});
     }
+  } catch (error) {
+    next(error);
+  }
+}
+
+
+// [POST] /auth/refresh-token
+export const refreshToken = async (req, res, next) => {
+  console.log("refresh token");
+  console.log(req.cookies);
+  const refreshToken = req.cookies.refreshToken;
+  if(!refreshToken)
+  {
+    return next(errorHandler(401, "You are not authenticated"));
+  }
+  try {
+    const userExsit = await User.findOne({refreshToken: refreshToken});
+    if(!userExsit)
+    {
+      return next(errorHandler(403, "Refresh token is not valid"));
+    }
+    jwt.verify(refreshToken, process.env.SECRET_REFRESH_TOKEN, async (err, payload) => {
+      if(err)
+      {
+        console.log(err);
+        return next(errorHandler(400, "Error: " + err));
+      }
+      console.log(payload);
+      // create a new accessToken
+      const newAccessToken = jwt.sign({id: payload.id}, process.env.SECRET_ACCESS_TOKEN, {expiresIn: "1h"});
+      const newRefreshToken = jwt.sign({id: payload.id}, process.env.SECRET_REFRESH_TOKEN, {expiresIn: "365d"});
+
+      await User.updateOne({_id: payload.id}, {refreshToken: newRefreshToken});
+
+      res.cookie("refreshToken", newRefreshToken, {
+        httpOnly: true, // Ngăn JavaScript trên trình duyệt truy cập cookie — tăng bảo mật.
+        path: "/",  // Đường dẫn mà cookie được gửi. "/" là toàn bộ ứng dụng.
+        // secure: false, // Cookie chỉ được gửi qua HTTPS nếu là true. Khi dev trên localhost, nên để false.
+        // sameSite: "none"  // Chống tấn công CSRF. Cookie chỉ được gửi nếu request đến từ cùng site.
+        maxAge: 365 * 24 * 60 * 60 * 1000
+      })
+
+      return res.status(200).json({message: "Refresh Token Successfully", accessToken: newAccessToken});
+    })
+
   } catch (error) {
     next(error);
   }

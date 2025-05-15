@@ -13,11 +13,11 @@ export const searchMembersInProject = async (req, res, next) => {
     const project = await Project.findOne({_id: projectId})
     .populate({
       path: "authorUserId",
-      select: "-password"
+      select: "-password -refreshToken"
     })
     .populate({
       path: "membersId",
-      select: "-password"
+      select: "-password -refreshToken"
     });
 
     if(!project.authorUserId._id.equals(userId) && !project.membersId.some(member => member._id.equals(userId)))
@@ -75,11 +75,11 @@ export const searchAddMemberToProject = async (req, res, next) => {
     const project = await Project.findOne({_id: projectId})
     .populate({
       path: "authorUserId",
-      select: "-password"
+      select: "-password -refreshToken"
     })
     .populate({
       path: "membersId",
-      select: "-password"
+      select: "-password -refreshToken"
     });
 
     if(!project.authorUserId._id.equals(userId) && !project.membersId.some(member => member._id.equals(userId)))
@@ -95,7 +95,7 @@ export const searchAddMemberToProject = async (req, res, next) => {
         { email: {$regex: search, $options: "i"}}
       ]
     })
-    .select("-password");
+    .select("-password -refreshToken");
 
     const result = [];
 
@@ -155,11 +155,11 @@ export const searchAnything = async (req, res, next) => {
     })
     .populate({
       path: "authorUserId",
-      select: "-password"
+      select: "-password -refreshToken"
     })
     .populate({
       path: "membersId",
-      select: "-password"
+      select: "-password -refreshToken"
     });
 
     const tasks = await Task.find({
@@ -182,11 +182,11 @@ export const searchAnything = async (req, res, next) => {
     })
     .populate({
       path: "authorUserId",
-      select: "-password"
+      select: "-password -refreshToken"
     })
     .populate({
       path: "assigneeUserId",
-      select: "-password"
+      select: "-password -refreshToken"
     });
 
     let users = [];
@@ -199,7 +199,7 @@ export const searchAnything = async (req, res, next) => {
           { email: {$regex: search, $options: "i"}}
         ]
       })
-      .select("-password");
+      .select("-password -refreshToken");
     }
     
 

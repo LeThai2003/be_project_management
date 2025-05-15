@@ -35,11 +35,11 @@ export const create = async (req, res, next) => {
     const task = await Task.findOne({_id: newTask._id})
     .populate({
       path: "authorUserId",
-      select: "-password"
+      select: "-password  -refreshToken"
     })
     .populate({
       path: "assigneeUserId",
-      select: "-password"
+      select: "-password  -refreshToken"
     });
 
     return res.status(200).json({message: "Create a new task successfully", task: task});
@@ -56,11 +56,11 @@ export const getAll = async (req, res, next) => {
     const tasks = await Task.find({projectId: projectId})
     .populate({
       path: "authorUserId",
-      select: "-password"
+      select: "-password -refreshToken"
     })
     .populate({
       path: "assigneeUserId",
-      select: "-password"
+      select: "-password -refreshToken"
     });
 
     const project = await Project.findOne({_id: projectId});
@@ -116,11 +116,11 @@ export const updateStatus = async (req, res, next) => {
     const taskUpdated = await Task.findOne({_id: taskId})
     .populate({
       path: "authorUserId",
-      select: "-password"
+      select: "-password -refreshToken"
     })
     .populate({
       path: "assigneeUserId",
-      select: "-password"
+      select: "-password -refreshToken"
     });
     return res.status(200).json({message: "Change status of task successfully", task: taskUpdated });
   } catch (error) {
@@ -171,11 +171,11 @@ export const updateTask = async (req, res, next) => {
     const taskUpdated = await Task.findOne({_id: taskId})
     .populate({
       path: "authorUserId",
-      select: "-password"
+      select: "-password -refreshToken"
     })
     .populate({
       path: "assigneeUserId",
-      select: "-password"
+      select: "-password -refreshToken"
     });
     return res.status(200).json({message: "Update task successfully", task: taskUpdated});
   } catch (error) {
@@ -211,11 +211,11 @@ export const taskDetail = async (req, res, next) => {
     )
     .populate({
       path: "authorUserId",
-      select: "-password"
+      select: "-password  -refreshToken"
     })
     .populate({
       path: "assigneeUserId",
-      select: "-password"
+      select: "-password  -refreshToken"
     });
 
     // console.log(task);
@@ -302,11 +302,11 @@ export const updateCompleted = async (req, res, next) => {
     const taskUpdated = await Task.findOne({_id: taskId})
     .populate({
       path: "authorUserId",
-      select: "-password"
+      select: "-password  -refreshToken"
     })
     .populate({
       path: "assigneeUserId",
-      select: "-password"
+      select: "-password  -refreshToken"
     });
 
     return res.json({message: "Update successfully", task: taskUpdated});
