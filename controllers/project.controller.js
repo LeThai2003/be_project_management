@@ -6,6 +6,7 @@ import User from "../models/user.model.js";
 import { sendMail } from "../utils/sendMail.js";
 import moment from "moment";
 import { convertToSlug } from "../helpers/convertToSlug.js";
+import Task from "../models/task.model.js";
 
 
 // [POST] /project/create
@@ -215,6 +216,118 @@ export const confirmInvite = async (req, res, next) => {
     }
     
     return res.status(400).json({message: "Token not valid"});
+  } catch (error) {
+    next(error);
+  }
+}
+
+// [GET] /project/data/chart
+export const dataChart = async (req, res, next) => {
+  const userId = req.userId;
+  try {
+    const projects = await Project.find({
+      $or: [
+        {authorUserId: userId},
+        {membersId: userId}
+      ]
+    });
+
+    let data = [];
+    let countCompleted = 0;
+    let countUnCompleted = 0;
+
+    if(projects.length > 0)
+    {
+      for (const project of projects) {
+        const task = await Task.findOne({
+          $and: [
+            {projectId: project._id},
+            {status: {$in: ["To Do", "Work In Progress", "Under Review"]}}
+          ]
+        });
+
+        if(task) countUnCompleted += 1;
+        else countCompleted += 1;
+      }
+    };
+
+    data.push({
+      type: "Completed",
+      percent: projects.length > 0 ? Math.round(countCompleted / projects.length * 100) : 0
+    });
+
+    data.push({
+      type: "UnCompleted",
+      percent: projects.length > 0 ? Math.round(countUnCompleted / projects.length * 100) : 0
+    });
+
+    return res.status(200).json({message: "Get data projects for chart successfully", data: data, totalProject: projects?.length || 0});
+
+  } catch (error) {
+    next(error);
+  }
+}
+
+export const percentCompleted = async (req, res, next) => {
+  const userId = req.userId;
+  try {
+    const projects = await Project.find({
+      $or: [
+        {authorUserId: userId},
+        {membersId: userId}
+      ]
+    });
+
+    const arrScore = [
+      {
+        status: "To Do",
+        score: 1
+      },
+      {
+        status: "Work In Progress",
+        score: 2
+      },
+      {
+        status: "Under Review",
+        score: 3
+      },
+      {
+        status: "Completed",
+        score: 4
+      },
+    ];
+
+    let result = [];
+
+    if(projects.length > 0)
+    {
+      for (const project of projects) {
+        const tasks = await Task.find({projectId: project._id});
+        let totalScore = tasks.length * 4;
+        if(tasks.length > 0)
+        {
+          let finalScore = 0;
+          for (const task of tasks) {
+            const score = arrScore.find(item => item.status == task.status).score;
+            finalScore += score; 
+          }
+          result.push({
+            projectId: project._id,
+            percent: Math.round(finalScore / totalScore * 100)
+          }) 
+        }
+        else
+        {
+          result.push({
+            projectId: project._id,
+            percent: 100
+          })          
+        }
+      }
+    }
+
+    return res.status(200).json({message: "Get percent completed successfully", result})
+
   } catch (error) {
     next(error);
   }

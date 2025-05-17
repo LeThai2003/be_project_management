@@ -314,3 +314,38 @@ export const updateCompleted = async (req, res, next) => {
     next(error);
   }
 }
+
+
+export const deleteTasks = async (req, res, next) => {
+  await Task.deleteMany();
+}
+
+// [GET] /task/data-chart
+export const dataChart = async (req, res, next) => {
+  console.log("--------")
+  const userId = req.userId;
+  try {
+    const tasks = await Task.find({
+      $or: [
+        {authorUserId: userId},
+        {assigneeUserId: userId}
+      ]
+    });
+
+    const data = [];
+    const arrStatus = ["To Do", "Work In Progress", "Under Review", "Completed"];
+
+    for (const status of arrStatus) {
+      const count = tasks?.filter(task => task.status == status).length || 0;
+      data.push({
+        status: status,
+        count: count
+      })
+    }
+
+    return res.status(200).json({message: "Get data tasks for chart successfully", data: data, totalTask: tasks?.length || 0});
+
+  } catch (error) {
+    next(error);
+  }
+}
