@@ -218,7 +218,7 @@ export const google = async (req, res, next) => {
 // [POST] /auth/refresh-token
 export const refreshToken = async (req, res, next) => {
   // console.log("refresh token");
-  // console.log(req.cookies);
+  console.log(req.cookies);
   const refreshToken = req.cookies.refreshToken;
   if(!refreshToken)
   {

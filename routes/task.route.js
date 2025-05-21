@@ -1,6 +1,6 @@
 import express from "express";
 import { authenticateToken } from "../middlewares/authenticate.middleware.js";
-import { create, dataChart, deleteTask, deleteTasks, getAll, taskDetail, updateCompleted, updateStatus, updateTask } from "../controllers/task.controller.js";
+import { create, dataChart, deleteTask, deleteTasks, getAll, taskDetail, tasksPriority, updateCompleted, updateStatus, updateTask } from "../controllers/task.controller.js";
 
 const route = express.Router();
 
@@ -23,5 +23,7 @@ route.get("/:taskId", taskDetail);
 route.patch("/update-completed/:taskId", updateCompleted);
 
 route.get("/data/chart", dataChart);
+
+route.get("/priority/:priority", tasksPriority)
 
 export default route;

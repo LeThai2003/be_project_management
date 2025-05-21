@@ -261,7 +261,7 @@ export const dataChart = async (req, res, next) => {
       percent: projects.length > 0 ? Math.round(countUnCompleted / projects.length * 100) : 0
     });
 
-    return res.status(200).json({message: "Get data projects for chart successfully", data: data, totalProject: projects?.length || 0});
+    return res.status(200).json({message: "Get data projects for chart successfully", data: data, total: projects?.length || 0});
 
   } catch (error) {
     next(error);

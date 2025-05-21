@@ -5,6 +5,8 @@ import { errorHandler } from "../utils/handleError.js";
 import Comment from "../models/comment.model.js";
 
 
+
+
 export const create = async (req, res, next) => {
   const userId = new mongoose.Types.ObjectId(req.userId);
   const {taskId} = req.params;
@@ -33,7 +35,23 @@ export const create = async (req, res, next) => {
     .populate({
       path: "userId",
       select: "-password -refreshToken"
-    })
+    });
+
+    // ----------------socket--------------------
+    // console.log("..............................", req.body.parentId);
+    if(req.body.parentId)
+    {
+      _io.to(`task-${taskId}`).emit(`SERVER_SEND_REP_COMMENT`, {
+        comment: record
+      });
+    }
+    else
+    {
+      _io.to(`task-${taskId}`).emit(`SERVER_SEND_NEW_COMMENT`, {
+        comment: record
+      });
+    }
+    // --------------end socket------------------
 
     return res.status(200).json({message: "Commented successfully", comment: record});
 
@@ -54,6 +72,10 @@ export const getAll = async (req, res, next) => {
     {
       return next(errorHandler(400, "You can't watch comments in this task"));
     }
+
+    // ----------------socket--------------------
+    
+    // --------------end socket------------------
 
     const comments = await Comment.find({taskId: taskId})
     .populate({
@@ -93,6 +115,13 @@ export const updateComment = async (req, res, next) => {
       select: "-password -refreshToken"
     });
 
+
+    // ----------------socket--------------------
+    _io.to(`task-${commentUpdate.taskId}`).emit(`SERVER_SEND_UPDATE_COMMENT`, {
+      comment: commentUpdate
+    });
+    // --------------end socket------------------
+
     return res.status(200).json({message: "Updated successfully", comment: commentUpdate});
 
   } catch (error) {
@@ -111,6 +140,10 @@ export const deleteComment = async (req, res, next) => {
     {
       return next(errorHandler(400, "You can't delete this comment"));
     }
+
+    // ----------------socket--------------------
+    _io.to(`task-${comment.taskId}`).emit(`SERVER_DELETE_COMMENT`, {commentId: comment._id});
+    // --------------end socket------------------
 
     await Comment.deleteMany({
       $or: [
@@ -156,7 +189,11 @@ export const updateLike = async (req, res, next) => {
     .populate({
       path: "userId",
       select: "-password -refreshToken"
-    })
+    });
+
+    // ----------------socket--------------------
+    _io.to(`task-${commentUpdate.taskId}`).emit(`SERVER_UPDATE_LIKE_COMMENT`, {commentId: commentUpdate._id, userId: userId.toString()});
+    // --------------end socket------------------
 
     return res.status(200).json({message: "Updated like successfully", comment: commentUpdate});
 

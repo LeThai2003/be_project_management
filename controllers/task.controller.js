@@ -322,7 +322,7 @@ export const deleteTasks = async (req, res, next) => {
 
 // [GET] /task/data-chart
 export const dataChart = async (req, res, next) => {
-  console.log("--------")
+  // console.log("--------")
   const userId = req.userId;
   try {
     const tasks = await Task.find({
@@ -343,7 +343,72 @@ export const dataChart = async (req, res, next) => {
       })
     }
 
-    return res.status(200).json({message: "Get data tasks for chart successfully", data: data, totalTask: tasks?.length || 0});
+    return res.status(200).json({message: "Get data tasks for chart successfully", data: data, total: tasks?.length || 0});
+
+  } catch (error) {
+    next(error);
+  }
+}
+
+// [GET] /task/priority/:priority
+export const tasksPriority = async (req, res, next) => {
+  const userId = req.userId;
+  const {priority} = req.params;
+  try {
+    const arrPriority = ['Backlog', 'Low', 'Medium', 'High', 'Urgent'];
+    if(!arrPriority.includes(priority))
+    {
+      return next(errorHandler(400, "Priority not valid"));
+    }
+
+    const projects = await Project.find({
+      $or: [
+        {authorUserId: userId},
+        {membersId: userId}
+      ]
+    });
+
+    const tasks = await Task.find({
+      $and: [
+        {
+          $or: [
+            {authorUserId: userId},
+            {assigneeUserId: userId}
+          ]
+        },
+        {priority: priority}
+      ]
+    })
+    .populate({
+      path: "authorUserId",
+      select: "fullname profilePicture"
+    })
+    .populate({
+      path: "assigneeUserId",
+      select: "fullname profilePicture"
+    })
+    .select("-sub_tasks");
+
+    let dataResult = [];
+
+    if(tasks.length > 0)
+    {
+      for (const project of projects) {
+        const tasksResult = tasks.filter(task => new mongoose.Types.ObjectId(task.projectId).equals(project._id));
+        if(tasksResult.length > 0)
+        {
+          dataResult.push({
+            project: {
+              id: project._id,
+              name: project.name
+            },
+            tasks: tasksResult
+          })
+        }
+      }
+    }
+
+    return res.status(200).json({message: "Get tasks priority successfully", dataPriorityTasks: dataResult});
 
   } catch (error) {
     next(error);
