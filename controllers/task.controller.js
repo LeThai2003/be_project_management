@@ -171,6 +171,17 @@ export const updateStatus = async (req, res, next) => {
       path: "assigneeUserId",
       select: "-password -refreshToken"
     });
+
+    const project = await Project.findOne({_id: task.projectId});
+    const memberIds = [project.authorUserId, ...(project.membersId || [])].map(id => id.toString());
+
+    const relatedUserNotify = memberIds.filter(id => id != userId);
+
+    _io.emit("UPDATE_TASK_DRAG_DROP", {
+      task: taskUpdated,
+      relatedUserNotify
+    })
+
     return res.status(200).json({message: "Change status of task successfully", task: taskUpdated });
   } catch (error) {
     next(error);
@@ -226,6 +237,17 @@ export const updateTask = async (req, res, next) => {
       path: "assigneeUserId",
       select: "-password -refreshToken"
     });
+
+    const project = await Project.findOne({_id: task.projectId});
+    const memberIds = [project.authorUserId, ...(project.membersId || [])].map(id => id.toString());
+
+    const relatedUserNotify = memberIds.filter(id => id != userId);
+
+    _io.emit("UPDATE_TASK", {
+      task: taskUpdated,
+      relatedUserNotify
+    })
+
     return res.status(200).json({message: "Update task successfully", task: taskUpdated});
   } catch (error) {
     next(error);
