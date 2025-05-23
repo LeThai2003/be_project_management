@@ -1,6 +1,8 @@
 import { convertToSlug } from "../helpers/convertToSlug.js";
+import Notification from "../models/notification.model.js";
 import Project from "../models/project.model.js";
 import Task from "../models/task.model.js";
+import User from "../models/user.model.js";
 import { generateRandomNumber } from "../utils/generate.js";
 import { errorHandler } from "../utils/handleError.js";
 import mongoose from "mongoose";
@@ -10,7 +12,17 @@ export const create = async (req, res, next) => {
   let {title, description, status, priority, tags, startDate, dueDate, imageTask, projectId, sub_tasks, assigneeUserId} = req.body;
   try {
 
-    console.log(assigneeUserId);
+    // console.log(assigneeUserId);
+    const project = await Project.findOne({_id: projectId});
+    const memberIds = [project.authorUserId, ...(project.membersId || [])].map(id => id.toString());
+
+    console.log(memberIds);
+    console.log(userId);
+
+    if(!memberIds.includes(userId))
+    {
+      return next(errorHandler(400, "You can't create a new task"));
+    }
 
     if(assigneeUserId == "") assigneeUserId = null
 
@@ -41,6 +53,43 @@ export const create = async (req, res, next) => {
       path: "assigneeUserId",
       select: "-password  -refreshToken"
     });
+
+    const relatedUserNotify = memberIds.filter(id => id != userId);
+    console.log(relatedUserNotify);
+    if(relatedUserNotify.length > 0)
+    {
+      const userInfo = await User.findOne({_id: userId}).select("fullname");
+
+      for (const id of relatedUserNotify) {
+        const object = {
+          type: "task",
+          title: `${userInfo.fullname} adds task ${title} to project ${project.name}`,
+          projectId: projectId,
+          userId: id,
+          taskId: task._id
+        };
+
+        // console.log(object);
+
+        const newNotify = new Notification(object);
+        await newNotify.save();
+      }
+
+      _io.emit("NOTIFY_CREATE_NEW_TASK", {
+        notification: {
+          type: "task",
+          title: `${userInfo.fullname} adds task ${title} to project ${project.name}`,
+          projectId: projectId,
+          taskId: task._id
+        },
+        relatedUserNotify
+      })
+
+      _io.emit("SERVER_RETURN_NEW_TASK", {
+        task,
+        relatedUserNotify
+      })
+    }
 
     return res.status(200).json({message: "Create a new task successfully", task: task});
   } catch (error) {
@@ -193,6 +242,17 @@ export const deleteTask = async (req, res, next) => {
     {
       return next(errorHandler(400, "You couldn't delete this task"));
     }
+
+    const notifications = await Notification.find({taskId: taskId});
+    if(notifications.length > 0)
+    {
+      for (const item of notifications) {
+        _io.emit(`NOTIFY_SERVER_DELETE_TASK`, {taskId: item.taskId, userId: item.userId});
+      }
+    }
+
+    await Notification.deleteMany({taskId: taskId});
+
     await Task.deleteOne({_id: taskId});
     return res.status(200).json({message: "Delete task successfully"});
   } catch (error) {

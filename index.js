@@ -12,6 +12,7 @@ import uploadRoute from "./routes/upload.route.js";
 import searchRoute from "./routes/search.route.js";
 import userRoute from "./routes/user.route.js";
 import commentRoute from "./routes/comment.route.js";
+import notificationRoute from "./routes/notification.route.js";
 import { commentSocketHandler } from "./sockets/comments/handleComment.socket.js";
 
 dotenv.config();
@@ -57,6 +58,7 @@ app.use("/upload", uploadRoute);
 app.use("/search", searchRoute);
 app.use("/user", userRoute);
 app.use("/comment", commentRoute);
+app.use("/notification", notificationRoute);
 
 // resolve err
 app.use((err, req, res, next) => {

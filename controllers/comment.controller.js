@@ -3,6 +3,9 @@ import Project from "../models/project.model.js";
 import Task from "../models/task.model.js";
 import { errorHandler } from "../utils/handleError.js";
 import Comment from "../models/comment.model.js";
+import { onlineUsers, userTaskMap } from "../sockets/comments/handleComment.socket.js";
+import User from "../models/user.model.js";
+import Notification from "../models/notification.model.js";
 
 
 
@@ -37,6 +40,8 @@ export const create = async (req, res, next) => {
       select: "-password -refreshToken"
     });
 
+    const user = await User.findOne({_id: req.userId}).select("fullname");
+
     // ----------------socket--------------------
     // console.log("..............................", req.body.parentId);
     if(req.body.parentId)
@@ -51,6 +56,37 @@ export const create = async (req, res, next) => {
         comment: record
       });
     }
+
+    // Tìm người tạo task và assignee để gửi thông báo
+    // console.log(task);
+
+    const relatedUsers = [task.authorUserId];
+    if(task.assigneeUserId) relatedUsers.push(task.assigneeUserId);
+
+    for (const targetUserId of relatedUsers) {
+      if (targetUserId == userId.toString) continue;
+
+      const viewingTask = userTaskMap.get(targetUserId.toString());
+      if (!viewingTask || (viewingTask !== taskId)) {
+
+        const object = {
+          type: "comment",
+          title: `${user.fullname} commented on task ${task.title}`,
+          commentId: record._id,
+          taskId: taskId,
+          userId: targetUserId
+        };
+
+        const newNotify = new Notification(object);
+        await newNotify.save();
+
+        _io.emit("NOTIFICATION", {
+          notification: newNotify._doc
+        });
+
+      }
+    }
+
     // --------------end socket------------------
 
     return res.status(200).json({message: "Commented successfully", comment: record});
@@ -143,6 +179,14 @@ export const deleteComment = async (req, res, next) => {
 
     // ----------------socket--------------------
     _io.to(`task-${comment.taskId}`).emit(`SERVER_DELETE_COMMENT`, {commentId: comment._id});
+
+    const notifications = await Notification.find({commentId: id});
+    if(notifications.length > 0)
+    {
+      for (const item of notifications) {
+        _io.emit(`NOTIFY_SERVER_DELETE_COMMENT`, {commentId: item.commentId, userId: item.userId});
+      }
+    }
     // --------------end socket------------------
 
     await Comment.deleteMany({
@@ -151,6 +195,10 @@ export const deleteComment = async (req, res, next) => {
         {parentId: id}
       ]
     });
+
+    await Notification.deleteMany({commentId: id});
+    
+
 
     return res.status(200).json({message: "Deleted successfully"});
 
@@ -185,17 +233,11 @@ export const updateLike = async (req, res, next) => {
       await Comment.updateOne({_id: id}, {$push: {like: userId}});
     }
 
-    const commentUpdate = await Comment.findOne({_id: id})
-    .populate({
-      path: "userId",
-      select: "-password -refreshToken"
-    });
-
     // ----------------socket--------------------
-    _io.to(`task-${commentUpdate.taskId}`).emit(`SERVER_UPDATE_LIKE_COMMENT`, {commentId: commentUpdate._id, userId: userId.toString()});
+    _io.to(`task-${comment.taskId._id}`).emit(`SERVER_UPDATE_LIKE_COMMENT`, {commentId: comment._id, userId: userId.toString()});
     // --------------end socket------------------
 
-    return res.status(200).json({message: "Updated like successfully", comment: commentUpdate});
+    return res.status(200).json({message: "Updated like successfully"});
 
   } catch (error) {
     next(error);

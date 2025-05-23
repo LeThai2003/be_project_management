@@ -7,6 +7,7 @@ import { sendMail } from "../utils/sendMail.js";
 import moment from "moment";
 import { convertToSlug } from "../helpers/convertToSlug.js";
 import Task from "../models/task.model.js";
+import Notification from "../models/notification.model.js";
 
 
 // [POST] /project/create
@@ -197,8 +198,17 @@ export const confirmInvite = async (req, res, next) => {
     const decode = jwt.verify(token, process.env.SECRET_ACCESS_TOKEN);
     const {email, memberId, projectId, type} = decode;
 
-    const project = await Project.findOne({_id: projectId});
-    if((project.authorUserId.equals(memberId) || project.membersId.some(id => id.equals(memberId))) && !project.invitations.some(inv => inv.email == email))
+    const project = await Project.findOne({_id: projectId})
+    .populate({
+      path: "authorUserId",
+      select: "-password -refreshToken"
+    })
+    .populate({
+      path: "membersId",
+      select: "-password -refreshToken"
+    });
+
+    if((project.authorUserId._id.equals(memberId) || project.membersId?.some(m => m._id.equals(memberId))) && !project.invitations.some(inv => inv.email == email))
     {
       return res.status(400).json("User not valid");
     }
@@ -211,6 +221,30 @@ export const confirmInvite = async (req, res, next) => {
         $push: {membersId: memberId},
         $pull: {invitations: {email: email}}
       });
+
+
+      const infoMember = await User.findOne({_id: memberId}).select("-password");
+
+      _io.emit("ADD_MEMBER_TO_PROJECT", {
+        project: project,
+        member: infoMember
+      });
+
+      const object = {
+        type: "member",
+        title: `${infoMember.fullname} has accepted to participate in the ${project.name} project`,
+        projectId: project._id,
+        userId: project.authorUserId._id
+      };
+
+      // console.log(object);
+
+      const newNotify = new Notification(object);
+      await newNotify.save();
+
+      _io.emit("MEMBER_ACCEPT_JOIN_PROJECT", {
+        notification: newNotify._doc,
+      })
 
       return res.status(200).json({message: "Add member successfully"});
     }
